@@ -1,0 +1,9 @@
+# Ignore everything
+*
+
+# But not these files
+!main.py
+!app.py
+
+# Also allow the .gitignore itself
+!.gitignore
