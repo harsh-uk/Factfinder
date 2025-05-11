@@ -49,49 +49,21 @@ def extract_domain(url: str) -> Optional[str]:
         logger.error(f"Error parsing URL {url}: {e}")
         return None
 
-def fetch_official_news(entity: str, official_url: str) -> List[Dict[str, str]]:
-    """Fetch official news with proper error handling."""
-    news = []
-    domain = extract_domain(official_url)
-
-    if domain:
-        for path in ["/news", "/media", "/press", "/newsroom"]:
-            candidate = f"https://{domain}{path}"
-            try:
-                response = requests.head(candidate, timeout=5, allow_redirects=True)
-                if response.status_code == 200:
-                    news.append({
-                        "title": f"{entity} Official News",
-                        "link": candidate
-                    })
-                    break
-            except requests.exceptions.RequestException as e:
-                logger.debug(f"Could not access {candidate}: {e}")
-
-    # Google search for news
+def fetch_official_news(entity):
     params = {
-        "q": f"{entity} latest news site:{domain}" if domain else f"{entity} latest news",
+        "q": f"{entity} legal news and issues",
         "key": GOOGLE_SEARCH_API_KEY,
         "cx": GOOGLE_CSE_ID,
-        "num": 5
+        "num": 10
     }
-
     try:
-        response = requests.get(
-            "https://www.googleapis.com/customsearch/v1",
-            params=params,
-            timeout=10
-        )
-        response.raise_for_status()
-        items = response.json().get("items", [])
-        news.extend({
-                        "title": item.get("title", "No title"),
-                        "link": item.get("link", "")
-                    } for item in items if item.get("link"))
-    except Exception as e:
-        logger.error(f"Error fetching news for {entity}: {e}")
-
-    return news[:10]  # Limit to 10 items
+        response = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
+        data = response.json()
+        if "items" in data:
+            return [{"title": item["title"], "link": item["link"]} for item in data["items"]]
+        return []
+    except:
+        return []
 
 def fetch_official_documents(entity: str) -> List[Dict[str, str]]:
     """Fetch official documents with proper error handling."""
@@ -145,7 +117,6 @@ Include:
 5. Key Financial Information
 6. Leadership Team
 7. Major Clients and Partnerships
-8. Recent News Highlights
 
 Respond in clear markdown format with appropriate sections.
 """
@@ -239,7 +210,7 @@ async def summarize_entity(entity: str):
             official_url = url_match.group(0)
 
         # Fetch additional data
-        official_news = fetch_official_news(sanitized_entity, official_url)
+        official_news = fetch_official_news(sanitized_entity)
         official_docs = fetch_official_documents(sanitized_entity)
 
         # Generate PDF
