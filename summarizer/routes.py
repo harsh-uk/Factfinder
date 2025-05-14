@@ -26,7 +26,13 @@ async def summarize_entity(entity: str):
     docs = google_search.fetch_documents(sanitized)
     symbol = alpha_financials.search_symbol(sanitized)
     financial_data = alpha_financials.get_quarterly_financials(symbol) if symbol else {}
-    pdf = pdf_generator.generate_pdf(sanitized, summary, news)
+    # Extract latest quarter metrics (optional, for PDF)
+    latest_year = max(financial_data.keys()) if financial_data else None
+    latest_q = max(financial_data[latest_year].keys()) if latest_year else None
+    metrics = financial_data[latest_year][latest_q] if latest_q else {}
+
+    pdf = pdf_generator.generate_pdf(sanitized, summary, news, metrics)
+
     if not pdf:
         raise HTTPException(status_code=500, detail="Failed to generate PDF")
 
@@ -41,10 +47,18 @@ async def summarize_entity(entity: str):
 
 @router.get("/download/{entity}")
 async def download_pdf(entity: str):
-    sanitized = re.sub(r'[^\w\s-]', '', entity).strip()
-    pdf_files = [f for f in os.listdir() if
-                 f.startswith(f"{sanitized.replace(' ', '_')}_summary_") and f.endswith(".pdf")]
-    if not pdf_files:
+    sanitized = re.sub(r'[^\w\s-]', '', entity).strip().replace(" ", "_")
+    folder = "summaries"
+    matching_files = [
+        f for f in os.listdir(folder)
+        if f.startswith(f"{sanitized}_summary_") and f.endswith(".pdf")
+    ]
+
+    if not matching_files:
         raise HTTPException(status_code=404, detail="PDF not found")
-    latest_pdf = max(pdf_files)
-    return FileResponse(latest_pdf, media_type="application/pdf", filename=f"{sanitized}_summary.pdf")
+
+    latest_pdf = max(matching_files)
+    full_path = os.path.join(folder, latest_pdf)
+
+    return FileResponse(full_path, media_type="application/pdf", filename=f"{sanitized}_summary.pdf")
+

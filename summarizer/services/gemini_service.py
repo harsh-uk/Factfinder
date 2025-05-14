@@ -19,6 +19,7 @@ Include:
 7. Major Clients and Partnerships
 
 Respond in clear markdown format with appropriate sections.
+Don't give extra response at the start like okay here is the summary, etc.
 """
     try:
         response = gemini_model.generate_content(prompt)
