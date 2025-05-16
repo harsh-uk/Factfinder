@@ -147,14 +147,28 @@ def generate_pdf(entity, summary, news, metrics):
     </body>
     </html>
     """
+    def format_metric(v):
+        try:
+            v = float(v)
+            if v >= 1e9:
+                return f"{v / 1e9:.2f}B USD"
+            elif v >= 1e6:
+                return f"{v / 1e6:.2f}M USD"
+            elif v >= 1e3:
+                return f"{v / 1e3:.2f}K USD"
+            else:
+                return f"{v:.2f}"
+        except:
+            return str(v)
 
+    formatted_metrics = {k: format_metric(v) for k, v in (metrics or {}).items()}
     # Create Jinja2 environment and render template
     env = Environment()
     template = env.from_string(template_str)
     rendered_html = template.render(
         entity_title=entity_title,
         html_content=html_content,
-        metrics=metrics or {},
+        metrics=formatted_metrics,
         news=news or [],
         today=datetime.now().strftime("%B %d, %Y")
     )
