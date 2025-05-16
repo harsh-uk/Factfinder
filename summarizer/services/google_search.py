@@ -1,6 +1,9 @@
-import requests
 import re
+
+import requests
+
 from summarizer.config import GOOGLE_SEARCH_API_KEY, GOOGLE_CSE_ID
+
 
 def fetch_news(entity):
     params = {
@@ -15,6 +18,7 @@ def fetch_news(entity):
         return [{"title": item["title"], "link": item["link"]} for item in data.get("items", [])]
     except:
         return []
+
 
 def fetch_documents(entity):
     params = {

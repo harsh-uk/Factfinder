@@ -61,4 +61,3 @@ async def download_pdf(entity: str):
     full_path = os.path.join(folder, latest_pdf)
 
     return FileResponse(full_path, media_type="application/pdf", filename=f"{sanitized}_summary.pdf")
-
